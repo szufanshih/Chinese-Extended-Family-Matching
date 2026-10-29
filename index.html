@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家人配对 Family Matching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Noto+Sans+SC:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #F6F6F2;
+  --ink: #2B2B2B;
+  --muted: #5E625E;
+  --card: #FFFFFF;
+  --line: #CFD2CC;
+  --pick: #7A5BC7;
+  --pick-soft: #EFE9FB;
+  --en: #5B9BD5;
+  --en-deep: #3B78B5;
+  --en-soft: #E3F0FB;
+  --zh: #E9B949;
+  --zh-deep: #C4932A;
+  --zh-soft: #FFF6D6;
+  --dad: #F2A65A;
+  --dad-ink: #B4471C;
+  --dad-soft: #FFF6E5;
+  --mom: #EC8FB3;
+  --mom-ink: #B23D6E;
+  --mom-soft: #FDEEF3;
+  --me: #8CC7A0;
+  --me-ink: #2F7A4D;
+  --me-soft: #EEF7F1;
+  --bad: #C2372F;
+  --f-zh: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --f-latin: 'Andika', 'Trebuchet MS', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-latin);
+  padding: 14px max(16px, env(safe-area-inset-right, 0px)) 18px max(16px, env(safe-area-inset-left, 0px));
+  user-select: none; -webkit-user-select: none;
+}
+.app { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.title { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.ruby { display: inline-flex; gap: 3px; align-items: flex-end; }
+.ruby > span { display: flex; flex-direction: column; align-items: center; }
+.ruby .py { font-family: var(--f-latin); line-height: 1.1; white-space: nowrap; }
+.ruby .zh { font-family: var(--f-zh); font-weight: 700; line-height: 1.1; }
+.title .py { font-size: 18px; } .title .zh { font-size: 40px; }
+.title .en { font-size: 20px; font-weight: 700; color: var(--muted); padding-bottom: 6px; }
+.title .zh { color: var(--dad-ink); } .title .ruby > span:nth-child(2n) .zh { color: var(--mom-ink); }
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pill { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 8px 14px; border-radius: 999px; background: var(--card); border: 2px solid var(--line); }
+button.ctl {
+  font: 700 18px var(--f-latin); color: var(--ink); background: var(--card);
+  border: 2px solid var(--ink); border-radius: 12px; padding: 10px 16px; cursor: pointer;
+}
+button.ctl[aria-pressed="false"] { color: var(--muted); border-color: var(--line); }
+button:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+.help { margin: 0; font-size: 18px; color: var(--muted); }
+
+.board { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); gap: 8px; }
+.board.c2 .tile { font-size: 20px; } .board.c2 .tile .zh { font-size: 28px; }
+.board.c3 .tile { font-size: 17px; line-height: 1.15; padding: 4px 8px; height: 68px; min-height: 0; } .board.c3 .tile .zh { font-size: 25px; } .board.c3 .tile .py { font-size: 15px; }
+.board.c3 .tile.done::after { width: 22px; height: 22px; font-size: 13px; line-height: 22px; right: 5px; top: 5px; transform: none; }
+.col h2 { margin: 0 auto; height: 34px; line-height: 30px; padding: 0 18px; border-radius: 999px; font-size: 17px; letter-spacing: .06em; text-align: center; border: 2px solid; }
+.col.en h2 { background: var(--en-soft); border-color: var(--en); color: var(--en-deep); text-transform: uppercase; }
+.col.zh h2 { background: var(--zh-soft); border-color: var(--zh); color: var(--zh-deep); font-family: var(--f-zh); }
+.tile {
+  width: 100%; min-height: 66px; height: 74px; border-radius: 14px; border: 3px solid var(--ink); background: var(--card);
+  box-shadow: 0 3px 0 var(--ink); cursor: pointer; padding: 6px 12px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font: 700 24px var(--f-latin); color: var(--ink); touch-action: manipulation;
+  transition: transform .08s, background .15s;
+}
+.tile:active { transform: translateY(2px); }
+.tile[data-side="L"] { background: var(--en-soft); border-color: var(--en); box-shadow: 0 4px 0 var(--en-deep); }
+.tile[data-side="R"] { background: var(--zh-soft); border-color: var(--zh); box-shadow: 0 4px 0 var(--zh-deep); }
+.tile { position: relative; }
+.tile .py { font-size: 17px; font-weight: 400; } .tile .zh { font-size: 30px; }
+.tile.picked { border-color: var(--pick); background: var(--pick-soft); box-shadow: 0 4px 0 var(--pick); outline: 3px solid var(--pick); outline-offset: 2px; }
+.tile.done { cursor: default; box-shadow: none; transform: none; color: var(--ink); }
+.tile.done.g-dad { border-color: var(--dad); background: #FCDDBE; }
+.tile.done.g-mom { border-color: var(--mom); background: #F9D3E2; }
+.tile.done.g-me { border-color: var(--me); background: #D3EBDB; }
+.tile.done::after { content: "✓"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; background: #FFFFFF; color: var(--ink); font: 700 18px/30px var(--f-latin); }
+.tile.wrong { animation: shake .35s; border-color: var(--bad); }
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-8px) } 75% { transform: translateX(8px) } }
+.win {
+  text-align: center; font-size: 22px; font-weight: 700; color: var(--me-ink);
+  background: var(--me-soft); border: 2px solid var(--me); border-radius: 14px; padding: 12px;
+}
+.win .zh { font-size: 34px; }
+.levels { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+.level {
+  display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 14px;
+  border: 2px solid var(--line); background: var(--card); cursor: pointer; font: 700 16px var(--f-latin); color: var(--muted);
+}
+.level svg { width: 32px; height: 66px; flex: none; }
+.level .lv-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
+.level .lv-text small { font-weight: 400; font-size: 13px; }
+.level[aria-pressed="true"] { border: 3px solid var(--pick); background: var(--pick-soft); color: var(--ink); }
+.win { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.win button.ctl { border-color: var(--me-ink); color: var(--me-ink); }
+@media (prefers-reduced-motion: reduce) { .tile.wrong { animation: none; } .tile { transition: none; } }
+@media (max-width: 640px) { .board { gap: 10px; } .tile { font-size: 18px; min-height: 70px; } .tile .zh { font-size: 26px; } .tile .py { font-size: 14px; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title">
+      <span class="ruby" id="titleRuby"></span>
+      <span class="en">Family Matching</span>
+    </div>
+    <div class="controls">
+      <span class="pill" id="score">0 / 6</span>
+      <span class="pill" id="timer">0:00</span>
+      <button class="ctl" id="soundBtn" type="button" aria-pressed="true">🔊 Sound on</button>
+      <button class="ctl" id="resetBtn" type="button">Mix up again</button>
+    </div>
+  </header>
+  <div class="levels" id="levels" aria-label="Level"></div>
+  <p class="help">Tap a Chinese word, then its English match.</p>
+
+  <div class="win" id="win" hidden><span><span class="ruby" id="winRuby"></span> Great job! <span id="winTime"></span></span><button class="ctl" id="nextBtn" type="button">Play again</button></div>
+
+  <div class="board">
+    <div class="col zh"><h2>中文</h2><div class="grid" id="right"></div></div>
+    <div class="col en"><h2>English</h2><div class="grid" id="left"></div></div>
+  </div>
+</div>
+
+<script>
+// ===== Word list =====
+// Each row: [English, Chinese, pinyin, color, level]
+//   color: me = green (parents, brothers & sisters), dad = orange (dad's side), mom = pink (mom's side)
+//   level: the first level the word shows up in. Each level keeps every word from the levels before it.
+// To add a word, copy a row and change it. Nothing else needs to change.
+const WORDS = [
+  ['father', '爸爸', 'bà ba', 'me', 1],
+  ['mother', '妈妈', 'mā ma', 'me', 1],
+  ['older brother', '哥哥', 'gē ge', 'me', 1],
+  ['older sister', '姐姐', 'jiě jie', 'me', 1],
+  ['younger brother', '弟弟', 'dì di', 'me', 1],
+  ['younger sister', '妹妹', 'mèi mei', 'me', 1],
+
+  ["father's father", '爷爷', 'yé ye', 'dad', 2],
+  ["father's mother", '奶奶', 'nǎi nai', 'dad', 2],
+  ["mother's father", '外公', 'wài gōng', 'mom', 2],
+  ["mother's mother", '外婆', 'wài pó', 'mom', 2],
+
+  ["father's big brother", '伯伯', 'bó bo', 'dad', 3],
+  ["father's younger brother", '叔叔', 'shū shu', 'dad', 3],
+  ["father's sister", '姑姑', 'gū gu', 'dad', 3],
+  ["mother's brother", '舅舅', 'jiù jiu', 'mom', 3],
+  ["mother's sister", '阿姨', 'ā yí', 'mom', 3],
+
+  ["older boy cousin (dad's side)", '堂哥', 'táng gē', 'dad', 4],
+  ["older girl cousin (dad's side)", '堂姐', 'táng jiě', 'dad', 4],
+  ["younger boy cousin (dad's side)", '堂弟', 'táng dì', 'dad', 4],
+  ["younger girl cousin (dad's side)", '堂妹', 'táng mèi', 'dad', 4],
+  ["older boy cousin (mom's side)", '表哥', 'biǎo gē', 'mom', 4],
+  ["older girl cousin (mom's side)", '表姐', 'biǎo jiě', 'mom', 4],
+  ["younger boy cousin (mom's side)", '表弟', 'biǎo dì', 'mom', 4],
+  ["younger girl cousin (mom's side)", '表妹', 'biǎo mèi', 'mom', 4]
+];
+const LEVELS = [
+  { name: 'Level 1', note: 'parents, brothers & sisters · 6' },
+  { name: 'Level 2', note: '+ grandparents · 10' },
+  { name: 'Level 3', note: "+ parents' brothers & sisters · 15" },
+  { name: 'Level 4', note: '+ cousins 堂 / 表 · 23' }
+];
+let PAIRS = [];
+let level = 1;
+
+function rubyHTML(zh, py) {
+  const p = py.split(' ');
+  return Array.from(zh).map((c, i) => `<span><span class="py">${p[i] || ''}</span><span class="zh">${c}</span></span>`).join('');
+}
+document.getElementById('titleRuby').innerHTML = rubyHTML('家人配对', 'jiā rén pèi duì');
+document.getElementById('winRuby').innerHTML = rubyHTML('太棒了', 'tài bàng le');
+
+const left = document.getElementById('left'), right = document.getElementById('right');
+const scoreEl = document.getElementById('score'), timerEl = document.getElementById('timer');
+const winEl = document.getElementById('win'), winTime = document.getElementById('winTime');
+let picked = { L: null, R: null }, matched = 0, start = 0, tick = null;
+
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function fmt(ms) { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+// English layout: "older/younger" on line 1 for cousins, "(...)" always on its own line
+function enHTML(en) {
+  let t = en.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  if (/cousin/.test(t)) t = t.replace(/^(older|younger)\s+/, '$1<br>');
+  return t.replace(/\s*\(/, '<br>(');
+}
+
+function tile(side, i) {
+  const [en, zh, py, g] = PAIRS[i];
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'tile g-' + g;
+  b.dataset.side = side; b.dataset.i = i;
+  if (side === 'L') b.innerHTML = enHTML(en); else b.innerHTML = `<span class="ruby">${rubyHTML(zh, py)}</span>`;
+  b.addEventListener('click', () => { if (side === 'R') speak(zh); pick(b); });
+  return b;
+}
+
+const SCOOPS = ['#F7A8C4', '#A8E0C2', '#9B6B4E', '#FBE7A1'];
+function iceCream(n) {
+  let g = '<path d="M7 34 L23 34 L15 55 Z" fill="#E8B46A" stroke="#8A5A2B" stroke-width="1.5" stroke-linejoin="round"/>'
+        + '<path d="M10 38 L19 45 M13 34 L21 41 M9 41 L16 50" stroke="#8A5A2B" stroke-width="1" fill="none"/>';
+  for (let k = 0; k < n; k++) {
+    const cy = 30 - k * 8.5;
+    g += `<circle cx="15" cy="${cy}" r="8.5" fill="${SCOOPS[k]}" stroke="#2B2B2B" stroke-width="1.5"/>`;
+  }
+  return `<svg viewBox="0 -6 30 62" aria-hidden="true">${g}</svg>`;
+}
+const levelsEl = document.getElementById('levels');
+LEVELS.forEach((L, k) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'level'; b.dataset.level = k + 1;
+  b.innerHTML = iceCream(k + 1) + `<span class="lv-text">${L.name}<small>${L.note}</small></span>`;
+  b.addEventListener('click', () => { level = k + 1; try { localStorage.setItem('matchLevel', level); } catch (e) {} setup(); });
+  levelsEl.appendChild(b);
+});
+try { const saved = +localStorage.getItem('matchLevel'); if (saved >= 1 && saved <= 4) level = saved; } catch (e) {}
+const fromHash = +(location.hash || '').replace(/\D/g, '');
+if (fromHash >= 1 && fromHash <= 4) level = fromHash;
+
+function buildRound() {
+  // every word up to and including this level
+  return WORDS.filter(w => w[4] <= level);
+}
+
+function setup() {
+  PAIRS = buildRound();
+  const cols = PAIRS.length <= 6 ? 1 : PAIRS.length <= 12 ? 2 : 3;
+  const boardEl = document.querySelector('.board');
+  boardEl.classList.remove('c1', 'c2', 'c3'); boardEl.classList.add('c' + cols);
+  boardEl.style.setProperty('--cols', cols);
+  levelsEl.querySelectorAll('.level').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.level === level)));
+  left.innerHTML = ''; right.innerHTML = '';
+  shuffle(PAIRS.map((_, i) => i)).forEach(i => left.appendChild(tile('L', i)));
+  shuffle(PAIRS.map((_, i) => i)).forEach(i => right.appendChild(tile('R', i)));
+  picked = { L: null, R: null }; matched = 0; start = 0;
+  clearInterval(tick); timerEl.textContent = '0:00';
+  winEl.hidden = true; update();
+}
+
+function update() { scoreEl.textContent = `${matched} / ${PAIRS.length}`; }
+
+function pick(b) {
+  if (b.classList.contains('done')) return;
+  if (!start) { start = Date.now(); tick = setInterval(() => timerEl.textContent = fmt(Date.now() - start), 250); }
+  const side = b.dataset.side;
+  if (picked[side]) picked[side].classList.remove('picked');
+  if (picked[side] === b) { picked[side] = null; return; }
+  picked[side] = b; b.classList.add('picked');
+  if (picked.L && picked.R) {
+    const a = picked.L, c = picked.R;
+    picked = { L: null, R: null };
+    if (a.dataset.i === c.dataset.i) {
+      [a, c].forEach(t => { t.classList.remove('picked'); t.classList.add('done'); t.disabled = true; });
+      matched++; update();
+      if (matched === PAIRS.length) {
+        clearInterval(tick);
+        winTime.textContent = 'Time: ' + fmt(Date.now() - start);
+        winEl.hidden = false;
+      }
+    } else {
+      [a, c].forEach(t => { t.classList.remove('picked'); t.classList.add('wrong'); setTimeout(() => t.classList.remove('wrong'), 400); });
+    }
+  }
+}
+
+// ===== Sound: reads the Chinese aloud with the device's Mandarin voice =====
+const SPEED = 0.55;   // reading speed: 1 = normal, smaller = slower (try 0.4 to 0.7)
+let soundOn = true, zhVoice = null;
+function findVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  zhVoice = vs.find(v => /zh[-_]CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang) && !/HK|yue/i.test(v.lang)) || null;
+}
+if ('speechSynthesis' in window) { findVoice(); speechSynthesis.onvoiceschanged = findVoice; }
+function speak(text) {
+  if (!soundOn || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN'; u.rate = SPEED;
+  if (zhVoice) u.voice = zhVoice;
+  speechSynthesis.speak(u);
+}
+const soundBtn = document.getElementById('soundBtn');
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  soundBtn.setAttribute('aria-pressed', String(soundOn));
+  soundBtn.textContent = soundOn ? '🔊 Sound on' : '🔇 Sound off';
+  if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+document.getElementById('resetBtn').addEventListener('click', setup);
+document.getElementById('nextBtn').addEventListener('click', setup);
+setup();
+</script>
+</body>
+</html>
